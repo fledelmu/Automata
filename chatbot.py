@@ -13,20 +13,34 @@ model = MarianMTModel.from_pretrained(model_name)
 def tokenize(text):
     words = []
     curr_word = ""
+    state = "START"
+
     for i in text:
-        if i.isalpha() or i in "'-":
-            curr_word += i
-        else:
-            if curr_word:
+        if state == "START":
+            if i.isalpha() or i in "'-":
+                curr_word += i
+                state = "WORD"
+        elif state == "WORD":
+            if i.isalpha() or i in "'-":
+                curr_word += i
+            else:
                 words.append(curr_word)
                 curr_word = ""
+                state = "START"
+
     if curr_word:
         words.append(curr_word)
+
     return words
+
+def lowercase_text(text):
+    tokens = tokenize(text.lower())
+    return " ".join(tokens)
 
 # English-to-Tagalog Translation
 def translate_en_to_tl(text):
-    batch = tokenizer(text, return_tensors="pt", padding=True)
+    cleaned_text = lowercase_text(text)
+    batch = tokenizer(cleaned_text, return_tensors="pt", padding=True)
     translated = model.generate(**batch)
     translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
 
@@ -44,7 +58,7 @@ responses = {
 # Generate chatbot response
 def chatbot_response(user_input):
     # Detect English and translate
-    if any(word in user_input.lower() for word in ["hello", "how", "what", "is", "thank", "you"]):
+    if any(word in user_input.lower() for word in ["hello", "how", "what", "is", "thank", "you","goodbye"]):
         print("Detected English. Translating to Tagalog...")
         user_input = translate_en_to_tl(user_input)
         print("Translated Text:", user_input)
@@ -60,6 +74,6 @@ def chatbot_response(user_input):
     return "Pasensya na, hindi ko naintindihan. Maaari mo bang ipaliwanag?"
 
 # Test chatbot
-user_input = "Thank you!"
+user_input = "Goodbye"
 response = chatbot_response(user_input)
 print(f"Bot: {response}")
