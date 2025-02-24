@@ -1,13 +1,11 @@
 import spacy
-from transformers import MarianMTModel, MarianTokenizer
+from googletrans import Translator
 
 # Load Calamancy (NLP for Tagalog)
 nlp = spacy.load("tl_calamancy_md")
 
-# Load Helsinki-NLP for English-to-Tagalog translation
-model_name = "Helsinki-NLP/opus-mt-en-tl"
-tokenizer = MarianTokenizer.from_pretrained(model_name)
-model = MarianMTModel.from_pretrained(model_name)
+# Initialize Google Translator
+translator = Translator()
 
 # Tokenizer function (FSA-based)
 def tokenize(text):
@@ -40,11 +38,8 @@ def lowercase_text(text):
 # English-to-Tagalog Translation
 def translate_en_to_tl(text):
     cleaned_text = lowercase_text(text)
-    batch = tokenizer(cleaned_text, return_tensors="pt", padding=True)
-    translated = model.generate(**batch)
-    translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
-
-    return translated_text.strip().lower()
+    translated = translator.translate(cleaned_text, src="en", dest="tl")
+    return translated.text.lower()
 
 # Response Dictionary (Tagalog)
 responses = {
@@ -58,7 +53,7 @@ responses = {
 # Generate chatbot response
 def chatbot_response(user_input):
     # Detect English and translate
-    if any(word in user_input.lower() for word in ["hello", "how", "what", "is", "thank", "you","goodbye"]):
+    if any(word in user_input.lower() for word in ["hello", "how", "what", "is", "thank", "you", "goodbye"]):
         print("Detected English. Translating to Tagalog...")
         user_input = translate_en_to_tl(user_input)
         print("Translated Text:", user_input)
@@ -74,6 +69,6 @@ def chatbot_response(user_input):
     return "Pasensya na, hindi ko naintindihan. Maaari mo bang ipaliwanag?"
 
 # Test chatbot
-user_input = "Goodbye"
+user_input = "Hello po"
 response = chatbot_response(user_input)
 print(f"Bot: {response}")
